@@ -20,24 +20,40 @@
 
 // Semáforos y variables condicion
 pthread_mutex_t mutexLog;
+
 pthread_mutex_t mutexFacturador;
+
+pthread_mutex_t mutexUsuario;
+
+pthread_mutex_t mutexSeguridad;
 
 // Contador de usuarios
 int nUsuarios;
 
 // Lista de usuarios (10) [id,facturado,atendido,tipo]
-usuario us[10];
 /*struct listaUsuarios{
 	usuario *cabeza;
 	usuario *cola;
 }listaUsuarios;*/
 
-struct usuario {
+typedef struct usuario {
 	char id[15];
 	int facturado;
 	int atendido;
 	int tipo;
-}
+
+} usuario;
+
+typedef struct usuario colaFacturacion[10];
+
+typedef struct facturador{
+
+	char id[15];
+	int usuariosAtendidos;
+	//struct facturador *siguiente;
+
+}facturador;
+
 
 // Usuario en el control
 
@@ -85,6 +101,36 @@ void nuevoUsuario() {
 		// b) si no hay espacio
 			// I. se ignora la llamada
 
+	printf("Voy a comprobar si hay sitio para un usuario...\n");
+
+
+	if (signal(SIGUSR1, SIG_IGN) == SIG_ERR) {
+ 
+    	printf("Error: %s\n", strerror(errno));
+ 
+  	}
+/*
+	pthread_mutex_lock(&mutexUsuario);
+
+		while(nUsuarios < 10){
+
+			nUsuarios++;
+
+			int i;
+
+			for(i = 0; i < colaFacturacion; i++){
+
+				if(usuario.id == 0){
+
+					printf("Se ha llegado a un hueco. El usuario %d se añade...\n",nUsuarios);
+
+				}
+			}
+		
+		}
+
+	pthread_mutex_unlock(&mutexUsuario);
+*/
 }
 
 void accionesUsuario() {
