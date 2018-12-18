@@ -31,6 +31,7 @@ pthread_mutex_t mutexSeguridad;
 int nUsuarios;
 
 // Lista de usuarios (10) [id,facturado,atendido,tipo]
+
 /*struct listaUsuarios{
 	usuario *cabeza;
 	usuario *cola;
@@ -41,6 +42,7 @@ typedef struct usuario {
 	int facturado;
 	int atendido;
 	int tipo;
+
 
 } usuario;
 
@@ -54,25 +56,37 @@ typedef struct facturador{
 
 }facturador;
 
+// Lista de usuarios (10) [id,facturado,atendido,tipo]
+typedef struct  usuario colaFacturacion[10];
 
 // Usuario en el control
 
 // Fichero de log
 FILE *logFile;
+char *logFileName = "registroAeropuerto.log";
 
 // Declaracion de funciones
 void escribirEnLog(char *id, char *msg);
-void nuevoUsuario();
+void nuevoUsuario(int senal);//funcion que recibe una señal SIGUSR1 (usuario normal);
+void nuevoVip(int senal);//funcion que recibe una señal SIGUSR2 (usuario vip);
 void accionesUsuario();
 void accionesFacturador();
 void accionesAgenteSeg();
-
+void salir();
 /******************************/
 
 int main(char argc, char *argv[]) {
 
 	// 1. signal o sigaction SIGUSR1, nuevoUsuario normal
+	if(signal(SIGUSR1,nuevoUsuario)==SIG_ERR)//si la señal es sigusr1 se mete a la funcion nuevoUsuario
+		exit(-1);
+		
+	if(signal(SIGINT,salir)==SIG_ERR)//si la señal es sigint entra en exit
+		exit(-1);
 	// 2. signal o sigaction SIGUSR2, nuevoVip
+
+	if(signal(SIGUSR2,nuevoVip)==SIG_ERR)//si la señal es sigusr2 se mete a la funcion nuevoVip
+		exit(-1);
 	// 3. inicializar recursos
 		// a) semaforos
 		// b) contador de recursos
@@ -85,11 +99,36 @@ int main(char argc, char *argv[]) {
 	// 5. crear el hilo agente de control
 	// 6. Esperar señal SIGUSR1 o SIGUSR2 o señal de finalizacion SIGINT
 	// 7. Esperar por señales de forma infinita
+	while(1)
+		pause();
 
 }
 
-void nuevoUsuario() {
+void nuevoUsuario(int senal) {
 
+	if(signal(SIGUSR1,nuevoUsuario)==SIG_ERR)//si la señal es sigusr1 se mete a la funcion nuevoUsuario
+		exit(-1);
+	
+	printf("He creado un nuevo usuario normal\n");
+	// 1. comprobar si hay espacio en la lista de facturacion
+		// a) si lo hay
+			// I. se añade el usuario
+			// II. incrementar contador de usuarios
+			// III. nuevoUsuario.id = contadorUsuarios
+			// IV. nuevoUsuario.atendido = 0
+			// V. tipo = depende de la señal recibida
+			// VI. crear el hilo para el usuario 
+		// b) si no hay espacio
+			// I. se ignora la llamada
+
+}
+
+void nuevoVip(int senal) {
+
+	if(signal(SIGUSR2,nuevoVip)==SIG_ERR)//si la señal es sigusr2 se mete a la funcion nuevoVip
+		exit(-1);
+	
+	printf("He creado un nuevo usuario vip\n");
 	// 1. comprobar si hay espacio en la lista de facturacion
 		// a) si lo hay
 			// I. se añade el usuario
@@ -192,7 +231,16 @@ void accionesAgenteSeg() {
 
 }
 
+void salir(){
 
+	if(signal(SIGINT,salir)==SIG_ERR)
+		exit(-1);
+    
+    sleep(1);
+		printf("He salido del programa\n");
+    exit(0);
+
+}
 
 void escribirEnLog(char *id, char *msg){
 	/*
@@ -207,7 +255,7 @@ void escribirEnLog(char *id, char *msg){
 	char stnow[19];
 	strftime(stnow, 19, "%d/%m/%y %H:%M:%S", tlocal);
 
-	logFile = fopen(logFileName, "Registro aeropuerto");
+	logFile = fopen(logFileName, "a");
 	fprintf(logFile, "[%s] %s: %s \n", stnow, id, msg);
 	fclose(logFile);
 }
