@@ -21,12 +21,11 @@
 // Semáforos y variables condicion
 pthread_mutex_t mutexLog;
 pthread_mutex_t mutexFacturador;
+pthread_mutex_t mutexSeguridad;
 
 // Contador de usuarios
 int nUsuarios;
 
-// Lista de usuarios (10) [id,facturado,atendido,tipo]
-usuario us[10];
 /*struct listaUsuarios{
 	usuario *cabeza;
 	usuario *cola;
@@ -37,7 +36,10 @@ struct usuario {
 	int facturado;
 	int atendido;
 	int tipo;
-}
+}usuario;
+
+// Lista de usuarios (10) [id,facturado,atendido,tipo]
+struct usuario us[10];
 
 // Usuario en el control
 
@@ -111,6 +113,14 @@ void accionesUsuario() {
 		// b) Escribe en el log
 	// 9. Fin del hilo Usuario.
 
+	printf("El usuario %d entra a la cola\n", usuario.id);
+
+	printf("Un usuario %d entra a la cola\n", usuario.tipo);
+
+	sleep(4);
+
+	
+
 }
 
 void accionesFacturador() {
@@ -148,7 +158,7 @@ void accionesAgenteSeg() {
 
 
 
-void escribirEnLog(char *id, char *msg){
+void escribirEnLog(char *id, char *msg) {
 	/*
 	 * escribirEnLog en la función que se encargará de escribir en el log
 	 * La finalidad de esta función es que cada una de las partes que 
