@@ -64,11 +64,11 @@ typedef struct facturador{
 }facturador;
 
 // Lista de usuarios (10) [id,facturado,atendido,tipo]
-typedef struct  usuario colaFacturacion[10];
+usuario colaFacturacion[10];
 
-typedef struct usuario* punteroUsuarios;
+usuario* punteroUsuarios;
 
-typedef struct facturadores* punteroFacturadores;
+facturador* punteroFacturadores;
 
 // Usuario en el control
 int usuarioEnControl; // 0 si está y 1 si no está en el control de seguridad.
@@ -93,6 +93,7 @@ int main(char argc, char *argv[]) {
 
 	pthread_t facturador1;
 	pthread_t facturador2;
+	pthread_t segurata;
 
 	// 1. signal o sigaction SIGUSR1, nuevoUsuario normal
 	if(signal(SIGUSR1,nuevoUsuario)==SIG_ERR)//si la señal es sigusr1 se mete a la funcion nuevoUsuario
@@ -116,10 +117,10 @@ int main(char argc, char *argv[]) {
 		// c) lista de usuarios (id = 0, atendido = 0, facturado = 0)
 			for (i = 0; i < NUM_USUARIOS; i++){
 
-				(*(punteroUsuarios + i)).id = 0;
+				/(*(punteroUsuarios + i)).id -> "0";
 				(*(punteroUsuarios + i)).facturado = 0;
 				(*(punteroUsuarios + i)).atendido = 0;
-				//(*(punteroUsuarios + i)).tipo = 0;
+				(*(punteroUsuarios + i)).tipo = 0;
 
 			}
 
@@ -145,7 +146,7 @@ int main(char argc, char *argv[]) {
 			pthread_create(&facturador2, NULL, accionesFacturador, NULL);
 
 	// 5. crear el hilo agente de control
-
+			pthread_create(&segurata, NULL, accionesSegurata, NULL);
 	// 6. Esperar señal SIGUSR1 o SIGUSR2 o señal de finalizacion SIGINT
 	// 7. Esperar por señales de forma infinita
 	while(1)
@@ -169,6 +170,11 @@ void nuevoUsuario(int senal) {
 			// VI. crear el hilo para el usuario 
 		// b) si no hay espacio
 			// I. se ignora la llamada
+
+	pthread_mutex_lock(&mutexUsuario);
+
+
+	pthread_mutex_unlock(&mutexUsuario);
 
 
 }
