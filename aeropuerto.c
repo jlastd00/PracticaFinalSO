@@ -22,12 +22,10 @@
 pthread_mutex_t mutexLog;
 pthread_mutex_t mutexFacturador;
 pthread_mutex_t mutexSeguridad;
+pthread_mutex_t mutexUsuario;
 
 // Contador de usuarios
 int nUsuarios;
-
-<<<<<<< HEAD
-=======
 
 
 /*struct listaUsuarios{
@@ -43,11 +41,10 @@ typedef struct usuario {
 }usuario;
 
 // Lista de usuarios (10) [id,facturado,atendido,tipo]
-struct usuario us[10];
-=======
-typedef struct  usuario colaFacturacion[10];
+typedef struct usuario colaFacturacion[10];
 
 // Usuario en el control
+
 
 // Fichero de log
 FILE *logFile;
@@ -128,6 +125,12 @@ void nuevoVip(int senal) {
 		// b) si no hay espacio
 			// I. se ignora la llamada
 
+	pthread_mutex_lock(&mutexUsuario);
+
+
+
+	pthread_mutex_unlock(&mutexUsuario);
+
 }
 
 void accionesUsuario() {
@@ -153,20 +156,20 @@ void accionesUsuario() {
 		// a) Libera su posición en cola de facturación y se va
 		// b) Escribe en el log
 	// 9. Fin del hilo Usuario.
-
+	/*
 	printf("El usuario %d entra a la cola\n", usuario.id);
 
 	printf("Un usuario %d entra a la cola\n", usuario.tipo);
 
 	sleep(4);
-
+	*/
 	
 
 }
 
 void accionesFacturador() {
 
-	// 1. Buscar el primer vehículo para atender (el que mas lleve esoerando)
+	// 1. Buscar el primer usuario para atender (el que mas lleve esoerando)
 		/* a) Si no hay de mi tipo busco uno de la otra (si el usuario es normal y
 			  facturador es de tipo vip y la cola del otro tiene más de un usuario, lo
 			  atiende) */
