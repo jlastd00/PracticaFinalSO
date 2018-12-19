@@ -50,7 +50,7 @@ typedef struct usuario {
 
 } usuario;
 
-int listaUsuarios[10];
+//int listaUsuarios[10];
 
 typedef struct facturador{
 
@@ -63,11 +63,11 @@ typedef struct facturador{
 }facturador;
 
 // Lista de usuarios (10) [id,facturado,atendido,tipo]
-typedef struct usuario colaFacturacion[10];
+usuario colaFacturacion[10];
 
-typedef struct usuario* punteroUsuarios;
+usuario listaUsuarios[NUM_USUARIOS];
 
-typedef struct facturadores* punteroFacturadores;
+facturador listaFacturadores[NUM_FACTURADORES];
 
 // Usuario en el control
 int usuarioEnControl; // 0 si está y 1 si no está en el control de seguridad.
@@ -116,24 +116,24 @@ int main(char argc, char *argv[]) {
 		// c) lista de usuarios (id = 0, atendido = 0, facturado = 0)
 			for (i = 0; i < NUM_USUARIOS; i++){
 
-				(*(punteroUsuarios + i)).id = 0;
-				(*(punteroUsuarios + i)).facturado = 0;
-				(*(punteroUsuarios + i)).atendido = 0;
-				//(*(punteroUsuarios + i)).tipo = 0;
-
+				sprintf(listaUsuarios[i].id, 0);
+				listaUsuarios[i].facturado = 0;
+				listaUsuarios[i].atendido = 0;
+				listaUsuarios[i].tipo = 0;
 			}
 
 
 		// d) lista de facturadores
-
+			
 			for(i = 0; i < NUM_FACTURADORES; i++){
 
-				(*(punteroFacturadores + i)).id = 0;
-				(*(punteroFacturadores + i)).usuariosAtendidos = 0;
-				(*(punteroFacturadores + i)).facturadorOcupado = 0;
-				(*(punteroFacturadores + i)).cafe = 0;
+				sprintf(listaFacturadores[i].id, 0);
+				listaFacturadores[i].usuariosAtendidos = 0;
+				listaFacturadores[i].facturadorOcupado = 0;
+				listaFacturadores[i].cafe = 0;
 
 			}
+			
 		// e) usuario en control
 			usuarioEnControl = 0;
 		// f) fichero de log
@@ -190,14 +190,12 @@ void nuevoVip(int senal) {
 		// b) si no hay espacio
 			// I. se ignora la llamada
 
-<<<<<<< HEAD
 	pthread_mutex_lock(&mutexUsuario);
 
 
 
 	pthread_mutex_unlock(&mutexUsuario);
 
-=======
 	printf("Voy a comprobar si hay sitio para un usuario...\n");
 
 
@@ -206,10 +204,7 @@ void nuevoVip(int senal) {
     	printf("Error: %s\n", strerror(errno));
  
   	}
-/*
-	
-*/
->>>>>>> ed629f899006dbc73699c3ada8aa3afd3f49cd9e
+
 }
 
 void accionesUsuario() {
@@ -235,13 +230,6 @@ void accionesUsuario() {
 		// a) Libera su posición en cola de facturación y se va
 		// b) Escribe en el log
 	// 9. Fin del hilo Usuario.
-	/*
-	printf("El usuario %d entra a la cola\n", usuario.id);
-
-	printf("Un usuario %d entra a la cola\n", usuario.tipo);
-
-	sleep(4);
-	*/
 	
 
 }
@@ -266,7 +254,7 @@ void accionesFacturador() {
 
 }
 
-void accionesAgenteSeg() {
+void accionesSegurata() {
 
 	// 1. Toma el mutex
 	// 2. Comprueba que haya algún usuario esperando por seguridad
