@@ -24,9 +24,8 @@
 pthread_mutex_t mutexLog;
 
 pthread_mutex_t mutexFacturador;
-
+pthread_mutex_t mutexSeguridad;
 pthread_mutex_t mutexUsuario;
-
 pthread_mutex_t mutexSeguridad;
 
 // Contador de usuarios
@@ -51,7 +50,7 @@ typedef struct usuario {
 
 } usuario;
 
-int listaUsuarios[10];
+//int listaUsuarios[10];
 
 typedef struct facturador{
 
@@ -66,12 +65,15 @@ typedef struct facturador{
 // Lista de usuarios (10) [id,facturado,atendido,tipo]
 usuario colaFacturacion[10];
 
-usuario* punteroUsuarios;
 
-facturador* punteroFacturadores;
+usuario listaUsuarios[NUM_USUARIOS];
+
+facturador listaFacturadores[NUM_FACTURADORES];
+
 
 // Usuario en el control
 int usuarioEnControl; // 0 si está y 1 si no está en el control de seguridad.
+
 
 // Fichero de log
 FILE *logFile;
@@ -117,24 +119,26 @@ int main(char argc, char *argv[]) {
 		// c) lista de usuarios (id = 0, atendido = 0, facturado = 0)
 			for (i = 0; i < NUM_USUARIOS; i++){
 
-				/(*(punteroUsuarios + i)).id -> "0";
-				(*(punteroUsuarios + i)).facturado = 0;
-				(*(punteroUsuarios + i)).atendido = 0;
-				(*(punteroUsuarios + i)).tipo = 0;
+
+				sprintf(listaUsuarios[i].id, 0);
+				listaUsuarios[i].facturado = 0;
+				listaUsuarios[i].atendido = 0;
+				listaUsuarios[i].tipo = 0;
 
 			}
 
 
 		// d) lista de facturadores
-
+			
 			for(i = 0; i < NUM_FACTURADORES; i++){
 
-				(*(punteroFacturadores + i)).id = 0;
-				(*(punteroFacturadores + i)).usuariosAtendidos = 0;
-				(*(punteroFacturadores + i)).facturadorOcupado = 0;
-				(*(punteroFacturadores + i)).cafe = 0;
+				sprintf(listaFacturadores[i].id, 0);
+				listaFacturadores[i].usuariosAtendidos = 0;
+				listaFacturadores[i].facturadorOcupado = 0;
+				listaFacturadores[i].cafe = 0;
 
 			}
+			
 		// e) usuario en control
 			usuarioEnControl = 0;
 		// f) fichero de log
@@ -196,6 +200,12 @@ void nuevoVip(int senal) {
 		// b) si no hay espacio
 			// I. se ignora la llamada
 
+	pthread_mutex_lock(&mutexUsuario);
+
+
+
+	pthread_mutex_unlock(&mutexUsuario);
+
 	printf("Voy a comprobar si hay sitio para un usuario...\n");
 
 
@@ -204,9 +214,7 @@ void nuevoVip(int senal) {
     	printf("Error: %s\n", strerror(errno));
  
   	}
-/*
-	
-*/
+
 }
 
 void accionesUsuario() {
@@ -232,12 +240,13 @@ void accionesUsuario() {
 		// a) Libera su posición en cola de facturación y se va
 		// b) Escribe en el log
 	// 9. Fin del hilo Usuario.
+	
 
 }
 
 void accionesFacturador() {
 
-	// 1. Buscar el primer vehículo para atender (el que mas lleve esoerando)
+	// 1. Buscar el primer usuario para atender (el que mas lleve esoerando)
 		/* a) Si no hay de mi tipo busco uno de la otra (si el usuario es normal y
 			  facturador es de tipo vip y la cola del otro tiene más de un usuario, lo
 			  atiende) */
@@ -255,7 +264,7 @@ void accionesFacturador() {
 
 }
 
-void accionesAgenteSeg() {
+void accionesSegurata() {
 
 	// 1. Toma el mutex
 	// 2. Comprueba que haya algún usuario esperando por seguridad
@@ -279,7 +288,7 @@ void salir(){
 
 }
 
-void escribirEnLog(char *id, char *msg){
+void escribirEnLog(char *id, char *msg) {
 	/*
 	 * escribirEnLog en la función que se encargará de escribir en el log
 	 * La finalidad de esta función es que cada una de las partes que 
