@@ -9,8 +9,6 @@
 #include <errno.h>
 #include <pthread.h>
 
-#define NUM_USUARIOS 10
-#define NUM_FACTURADORES 2
 /**
  * @author Juan Ramón Lastra Díaz
  * @author Héctor González Barrioluengo
@@ -20,69 +18,60 @@
 
 /*** Declaraciones Globales ***/
 
-// Semáforos y variables condicion
-pthread_mutex_t mutexLog;
-
-pthread_mutex_t mutexFacturador;
-pthread_mutex_t mutexSeguridad;
-pthread_mutex_t mutexUsuario;
-pthread_mutex_t mutexSeguridad;
-
-// Contador de usuarios
-int nUsuarios;
-
-int nUsuariosColaFacturacion;
-
-
-// Lista de usuarios (10) [id,facturado,atendido,tipo]
-
-/*struct listaUsuarios{
-	usuario *cabeza;
-	usuario *cola;
-}listaUsuarios;*/
-
-typedef struct usuario {
+// Estructuras
+struct usuario {
+	
 	char id[15];
 	int facturado;
 	int atendido;
 	int tipo;
+	struct usuario *siguiente;
 
+}usuario;
 
-} usuario;
-
-//int listaUsuarios[10];
-
-typedef struct facturador{
+struct facturador {
 
 	char id[15];
 	int usuariosAtendidos;
-	int facturadorOcupado;
-	int cafe;
-	//struct facturador *siguiente;
+	int ocupado;
 
 }facturador;
 
+struct listaUsuarios {
+
+  	struct usuario *primero;
+  	struct usuario *ultimo;
+
+}listaUsuarios;
+
+
+// Semáforos y variables condicion
+pthread_mutex_t mutexLog;
+pthread_mutex_t mutexFacturador;
+pthread_mutex_t mutexUsuario;
+pthread_mutex_t mutexListaUsuarios;
+pthread_mutex_t mutexSeguridad;
+
+// Contador de usuarios
+int numeroUsuarios;
+
 // Lista de usuarios (10) [id,facturado,atendido,tipo]
-usuario colaFacturacion[10];
-
-
-usuario listaUsuarios[NUM_USUARIOS];
-
-facturador listaFacturadores[NUM_FACTURADORES];
 
 
 // Usuario en el control
-int usuarioEnControl; // 0 si está y 1 si no está en el control de seguridad.
-
+int usuarioEnControl;
 
 // Fichero de log
 FILE *logFile;
 char *logFileName = "registroAeropuerto.log";
 
+// Otras vaiables
+int maxUsuarios = 10;
+
 // Declaracion de funciones
 void escribirEnLog(char *id, char *msg);
 void nuevoUsuario(int senal);//funcion que recibe una señal SIGUSR1 (usuario normal);
-void nuevoVip(int senal);//funcion que recibe una señal SIGUSR2 (usuario vip);
+void aniadirUsuario(struct usuario* us);
 void accionesUsuario();
 void accionesFacturador();
 void accionesSegurata();
@@ -91,79 +80,58 @@ void salir();
 
 int main(char argc, char *argv[]) {
 
-	int i;
-
-	pthread_t facturador1;
-	pthread_t facturador2;
-	pthread_t segurata;
+	pthread_t facturador1, facturador2, segurata;
 
 	// 1. signal o sigaction SIGUSR1, nuevoUsuario normal
-	if(signal(SIGUSR1,nuevoUsuario)==SIG_ERR)//si la señal es sigusr1 se mete a la funcion nuevoUsuario
-		exit(-1);
-		
-	if(signal(SIGINT,salir)==SIG_ERR)//si la señal es sigint entra en exit
-		exit(-1);
 	// 2. signal o sigaction SIGUSR2, nuevoVip
-
-	if(signal(SIGUSR2,nuevoVip)==SIG_ERR)//si la señal es sigusr2 se mete a la funcion nuevoVip
-		exit(-1);
 	// 3. inicializar recursos
 		// a) semaforos
-			pthread_mutex_init(&mutexUsuario, NULL);
-			pthread_mutex_init(&mutexSeguridad, NULL);
-			pthread_mutex_init(&mutexFacturador, NULL);
-			pthread_mutex_init(&mutexLog, NULL);
 		// b) contador de recursos
-			nUsuariosColaFacturacion = 0;
-			nUsuarios = 0;
 		// c) lista de usuarios (id = 0, atendido = 0, facturado = 0)
-			for (i = 0; i < NUM_USUARIOS; i++){
-
-
-				sprintf(listaUsuarios[i].id, 0);
-				listaUsuarios[i].facturado = 0;
-				listaUsuarios[i].atendido = 0;
-				listaUsuarios[i].tipo = 0;
-
-			}
-
-
 		// d) lista de facturadores
-			
-			for(i = 0; i < NUM_FACTURADORES; i++){
-
-				sprintf(listaFacturadores[i].id, 0);
-				listaFacturadores[i].usuariosAtendidos = 0;
-				listaFacturadores[i].facturadorOcupado = 0;
-				listaFacturadores[i].cafe = 0;
-
-			}
-			
 		// e) usuario en control
-			usuarioEnControl = 0;
 		// f) fichero de log
-			logFile = fopen(logFileName, "w");
 		// g) variable condicion
-
 	// 4. crear 2 hilos facturadores
-			pthread_create(&facturador1, NULL, accionesFacturador, NULL);
-			pthread_create(&facturador2, NULL, accionesFacturador, NULL);
-
 	// 5. crear el hilo agente de control
-			pthread_create(&segurata, NULL, accionesSegurata, NULL);
 	// 6. Esperar señal SIGUSR1 o SIGUSR2 o señal de finalizacion SIGINT
 	// 7. Esperar por señales de forma infinita
-	while(1)
+
+	if (signal(SIGUSR1, nuevoUsuario) == SIG_ERR) exit(-1);
+	if (signal(SIGUSR2, nuevoUsuario) == SIG_ERR) exit(-1);
+	if (signal(SIGINT, salir) == SIG_ERR) exit(-1);
+
+	pthread_mutex_init(&mutexUsuario, NULL);
+	pthread_mutex_init(&mutexListaUsuarios, NULL);
+	pthread_mutex_init(&mutexFacturador, NULL);
+	pthread_mutex_init(&mutexSeguridad, NULL);
+	pthread_mutex_init(&mutexLog, NULL);
+
+	numeroUsuarios = 1;
+
+	listaUsuarios.primero = NULL;
+	listaUsuarios.primero = NULL;
+	
+	usuarioEnControl = 0;
+
+	logFile = fopen(logFileName, "w");
+
+	/*
+	pthread_create(&facturador1, NULL, accionesFacturador, NULL);
+	pthread_create(&facturador2, NULL, accionesFacturador, NULL);
+
+	pthread_create(&segurata, NULL, accionesSegurata, NULL);
+	*/
+
+	while (1) 
 		pause();
+
+
 
 }
 
 void nuevoUsuario(int senal) {
 
-	if(signal(SIGUSR1,nuevoUsuario)==SIG_ERR)//si la señal es sigusr1 se mete a la funcion nuevoUsuario
-		exit(-1);
-	
-
 	// 1. comprobar si hay espacio en la lista de facturacion
 		// a) si lo hay
 			// I. se añade el usuario
@@ -175,64 +143,75 @@ void nuevoUsuario(int senal) {
 		// b) si no hay espacio
 			// I. se ignora la llamada
 
-	int x;
+	if (signal(SIGUSR1, SIG_IGN) == SIG_ERR) exit(-1);
+	if (signal(SIGUSR2, SIG_IGN) == SIG_ERR) exit(-1);
 
-	
 	pthread_mutex_lock(&mutexUsuario);
 
+	if (numeroUsuarios < maxUsuarios) {
 
-		printf("He creado un nuevo usuario normal\n");
+		pthread_t hUsuario;
+		struct usuario* us;
+		char id[15];
+		char numeroID[2];
 
-		printf("Voy a comprobar si hay espacio para introducir un nuevo usuario normal\n");
+		us = (struct usuario*)malloc(sizeof(struct usuario));
 
-		for(x = 0; x < NUM_USUARIOS; x++){
+		sprintf(numeroID, "%d", numeroUsuarios);
+		strcpy(id, "usuario_");
+		strcat(id, numeroID);
+		strcpy(us->id, id);
 
-			printf("Voy a comprobar la posicion %d Manuel!\n ",x);
+		us->facturado = 0;
+		us->atendido = 0;
+		if (senal == SIGUSR1) us->tipo = 0; // Usuario Normal
+		if (senal == SIGUSR2) us->tipo = 1; // Usuario VIP
 
-			//if(listaUsuarios[x].id == 0){
-
-				printf("Se ha encontrado un hueco, el usuario puede entrar... %d\n", listaUsuarios[x].id);
-
-			//}
-
+		if (pthread_create (&hUsuario, NULL, accionesUsuario, us) != 0) {
+			printf("Error al crear el hilo. %s\n", strerror(errno));
+			exit(-1);
 		}
+		else {
+			numeroUsuarios++;
+			//cantidadDeUsuariosActivos++;
+			aniadirUsuario(us);
+		}
+
+		printf("Se ha creado un usuario %d\n", us->tipo);
+		//escribirEnLog(us->id, "Esta en cola de facturacion");
+
+	}
 
 	pthread_mutex_unlock(&mutexUsuario);
 
+	if (signal(SIGUSR1, nuevoUsuario) == SIG_ERR) exit(-1);
+	if (signal(SIGUSR2, nuevoUsuario) == SIG_ERR) exit(-1);
 
 }
 
-void nuevoVip(int senal) {
+void aniadirUsuario(struct usuario* us) {
 
-	if(signal(SIGUSR2,nuevoVip)==SIG_ERR)//si la señal es sigusr2 se mete a la funcion nuevoVip
-		exit(-1);
-	
-	printf("He creado un nuevo usuario vip\n");
-	// 1. comprobar si hay espacio en la lista de facturacion
-		// a) si lo hay
-			// I. se añade el usuario
-			// II. incrementar contador de usuarios
-			// III. nuevoUsuario.id = contadorUsuarios
-			// IV. nuevoUsuario.atendido = 0
-			// V. tipo = depende de la señal recibida
-			// VI. crear el hilo para el usuario 
-		// b) si no hay espacio
-			// I. se ignora la llamada
+	pthread_mutex_lock(&mutexListaUsuarios);
 
-	pthread_mutex_lock(&mutexUsuario);
+	if (listaUsuarios.primero == NULL) {
 
+		listaUsuarios.primero = us;
+		listaUsuarios.ultimo = us;
+		us->siguiente = NULL;
 
+	}
 
-	pthread_mutex_unlock(&mutexUsuario);
+	else {
 
-	printf("Voy a comprobar si hay sitio para un usuario...\n");
+		(listaUsuarios.ultimo)->siguiente = us;
+		listaUsuarios.ultimo = us;
+		us->siguiente = NULL;
 
+	}
 
-	if (signal(SIGUSR1, SIG_IGN) == SIG_ERR) {
- 
-    	printf("Error: %s\n", strerror(errno));
- 
-  	}
+	printf("Añadido el usuario %s a la lista de ususarios\n", us->id);
+
+	pthread_mutex_unlock(&mutexListaUsuarios);
 
 }
 
@@ -294,33 +273,47 @@ void accionesSegurata() {
 	// 7. Avisa al usuario de que ha terminado la atención
 	// 8. Libera el mutex
 
+	//pthread_mutex_lock(&mutexSeguridad);
+
+
+
+	//pthread_mutex_unlock(&mutexSeguridad);
+
 }
 
-void salir(){
+void salir() {
 
-	if(signal(SIGINT,salir)==SIG_ERR)
-		exit(-1);
+	if (signal(SIGINT,salir) == SIG_ERR) exit(-1);
     
     sleep(1);
-		printf("He salido del programa\n");
+	
+	printf("He salido del programa\n");
+    
     exit(0);
 
 }
 
 void escribirEnLog(char *id, char *msg) {
 	/*
-	 * escribirEnLog en la función que se encargará de escribir en el log
+	 * escribirEnLog es la función que se encargará de escribir en el log
 	 * La finalidad de esta función es que cada una de las partes que 
 	 * han de aparecer en el log sean escritar
 	 * con el fin de registar lo que se pide.
 	 */
 
+	pthread_mutex_lock(&mutexLog);
+
+	// Calculamos la hora actual
 	time_t actual = time(0);
 	struct tm *tlocal = localtime(&actual);
 	char stnow[19];
-	strftime(stnow, 19, "%d/%m/%y %H:%M:%S", tlocal);
+	strftime(stnow, 19, "%d/%m/%y  %H:%M:%S", tlocal);
 
-	logFile = fopen(logFileName, "a");
-	fprintf(logFile, "[%s] %s: %s \n", stnow, id, msg);
+	// Escribimos en el log
+	logFile = fopen("registroTiempos.log", "a");
+	fprintf(logFile, "[%s] %s: %s\n", stnow, id, msg);
 	fclose(logFile);
+
+	pthread_mutex_unlock(&mutexLog);
+
 }
