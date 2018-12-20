@@ -85,7 +85,7 @@ void nuevoUsuario(int senal);//funcion que recibe una señal SIGUSR1 (usuario no
 void nuevoVip(int senal);//funcion que recibe una señal SIGUSR2 (usuario vip);
 void accionesUsuario();
 void accionesFacturador();
-void accionesAgenteSeg();
+void accionesSegurata();
 void salir();
 /******************************/
 
@@ -163,7 +163,7 @@ void nuevoUsuario(int senal) {
 	if(signal(SIGUSR1,nuevoUsuario)==SIG_ERR)//si la señal es sigusr1 se mete a la funcion nuevoUsuario
 		exit(-1);
 	
-	printf("He creado un nuevo usuario normal\n");
+
 	// 1. comprobar si hay espacio en la lista de facturacion
 		// a) si lo hay
 			// I. se añade el usuario
@@ -175,8 +175,27 @@ void nuevoUsuario(int senal) {
 		// b) si no hay espacio
 			// I. se ignora la llamada
 
+	int x;
+
+	
 	pthread_mutex_lock(&mutexUsuario);
 
+
+		printf("He creado un nuevo usuario normal\n");
+
+		printf("Voy a comprobar si hay espacio para introducir un nuevo usuario normal\n");
+
+		for(x = 0; x < NUM_USUARIOS; x++){
+
+			printf("Voy a comprobar la posicion %d Manuel!\n ",x);
+
+			//if(listaUsuarios[x].id == 0){
+
+				printf("Se ha encontrado un hueco, el usuario puede entrar... %d\n", listaUsuarios[x].id);
+
+			//}
+
+		}
 
 	pthread_mutex_unlock(&mutexUsuario);
 
