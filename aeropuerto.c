@@ -215,7 +215,7 @@ void aniadirUsuario(struct usuario* us) {
 
 }
 
-void accionesUsuario() {
+void accionesUsuario(struct usuario* us) {
 
 	// 1. guardar en el log la hora de entrada.
 	// 2. guardar en el log el tipo de usuario.
@@ -240,6 +240,75 @@ void accionesUsuario() {
 	// 9. Fin del hilo Usuario.
 	
 
+	//pthread_mutex_lock(&mutexLog);
+	pthread_mutex_lock(&mutexUsuario);
+		/*
+		 * Se bloquea el mutexLog, puesto que se va a escribir en el log y cada hilo tendrá
+		 * que escribir sus datos correspondientes. Solo puede acceder un hilo a la vez. Al ser global es necesario el bloqueo
+		 * y el desbloqueo de los mutex.
+		 */
+
+	printf("Hola! Hemos llegado a las funciones de usuario\n");
+
+	printf("\nSoy el usuario %s \n", us->id);
+	sleep(4);
+
+	printf("%s voy a comprobar si me están atendiendo...\n", us->id);
+
+	int usuarioIndignado = 0; //El usuario se indigna y se va porque no le atienden.
+	
+	int usuarioAlBano = 0; //El usuario comprueba si tiene que ir al baño.
+
+	if(us->atendido != 1){
+
+		printf("No he sido atendido aún...\n");
+
+	 	
+
+		srand(time(NULL));
+
+		usuarioIndignado = rand()%10+1;
+
+		usuarioAlBano = rand()%10+1;
+
+		if(usuarioIndignado > 8){
+
+			printf("%s: me he cansado de esperar y me voy\n", us->id);
+			/*
+			 * Llegado este punto el usuario se debe eliminar.
+			 */
+		}
+
+		/*Cada 3 segundos se comprueba si va al baño pero no se si está así bien.*/
+		
+		sleep(3);
+
+		if(usuarioAlBano > 2){//el 2 es de prueba. No se si es correcto
+
+			printf("%s: tengo que ir al baño, mi sitio queda libre...\n", us->id);
+			/*
+			 * Aquí se pasaría a la función para eliminar a este usuario y que su lugar se quede libre.
+			 */
+		}else{
+
+			printf("%s: voy a seguir esperando...\n",us->id);
+
+			sleep(4);
+
+			/*
+			 * Tras esto debe comprobar de nuevo si se cansa, va al baño o es atendido. No estoy muy seguro de cómo hacerlo.
+			 */
+		}
+	
+	}else {
+
+	printf("%s: ya estoy atendido ahora esperaré...\n", us->id);
+	
+	}
+	
+	pthread_mutex_unlock(&mutexUsuario);
+
+	//pthread_mutex_unlock(&mutexLog);
 }
 
 void accionesFacturador() {
