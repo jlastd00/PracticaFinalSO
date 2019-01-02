@@ -44,6 +44,19 @@ struct listaUsuarios {
 
 }listaUsuarios;
 
+struct esperaUsuarios {
+
+  struct usuario* usuarioEsperando;
+  struct esperaUsuarios* siguiente;
+
+} esperaUsuarios;
+
+struct listaEsperaUsuarios {
+
+  struct esperaUsuarios* cabeza;
+  struct esperaUsuarios* cola;
+
+} listaEsperaUsuarios;
 
 // Semáforos y variables condicion
 pthread_mutex_t mutexLog;
@@ -76,6 +89,9 @@ void accionesUsuario();
 void accionesFacturador();
 void accionesSegurata();
 void salir();
+struct usuario* atenderUsuario();
+void eliminarUsuario(struct usuario* usuarioAEliminar);
+
 /******************************/
 
 int main(char argc, char *argv[]) {
@@ -241,7 +257,10 @@ void accionesUsuario(struct usuario* us) {
 	
 
 	//pthread_mutex_lock(&mutexLog);
-	pthread_mutex_lock(&mutexUsuario);
+
+struct usuario* nUsuario = (struct usuario*)us;
+
+	pthread_mutex_lock(&mutexListaUsuarios); 
 		/*
 		 * Se bloquea el mutexLog, puesto que se va a escribir en el log y cada hilo tendrá
 		 * que escribir sus datos correspondientes. Solo puede acceder un hilo a la vez. Al ser global es necesario el bloqueo
@@ -277,6 +296,12 @@ void accionesUsuario(struct usuario* us) {
 			/*
 			 * Llegado este punto el usuario se debe eliminar.
 			 */
+
+			eliminarUsuario(nUsuario);
+			
+			numeroUsuarios--;
+			
+			pthread_exit(NULL);
 		}
 
 		/*Cada 3 segundos se comprueba si va al baño pero no se si está así bien.*/
@@ -289,6 +314,12 @@ void accionesUsuario(struct usuario* us) {
 			/*
 			 * Aquí se pasaría a la función para eliminar a este usuario y que su lugar se quede libre.
 			 */
+
+			eliminarUsuario(nUsuario);
+
+			numeroUsuarios;
+
+			pthread_exit(NULL);
 		}else{
 
 			printf("%s: voy a seguir esperando...\n",us->id);
@@ -306,7 +337,7 @@ void accionesUsuario(struct usuario* us) {
 	
 	}
 	
-	pthread_mutex_unlock(&mutexUsuario);
+	pthread_mutex_unlock(&mutexListaUsuarios);
 
 	//pthread_mutex_unlock(&mutexLog);
 }
@@ -329,8 +360,39 @@ void accionesFacturador() {
 	// 10. Mira si le toca tomar café.
 	// 11. Volvemos al paso 1 y buscamos el siguiente (siempre con prioridad a su tipo). 
 
-}
 
+	pthread_mutex_lock(&mutexFacturador);
+
+		while(1) {
+
+    		if (listaEsperaUsuarios.cabeza == NULL) {
+
+      			sleep(1);
+
+    		}else{
+
+        	nUsuario = atenderUsuario();
+
+			}
+
+		}
+
+	pthread_mutex_unlock(&mutexFacturador);
+
+}
+struct usuario* atenderUsuario() {
+
+  pthread_mutex_lock(&mutexListaEsperaUsuarios);
+
+  struct usuario* usuarioAtendido = listaEsperaUsuarios.cabeza->usuarioEsperando;
+
+  listaEsperaUsuarios.cabeza = listaEsperaUsuarios.cabeza->siguiente;
+
+  pthread_mutex_unlock(&mutexListaEsperaUsuarios);
+
+  return usuarioAtendido;
+
+}
 void accionesSegurata() {
 
 	// 1. Toma el mutex
@@ -348,6 +410,63 @@ void accionesSegurata() {
 
 	//pthread_mutex_unlock(&mutexSeguridad);
 
+}
+
+void eliminarUsuario(struct usuario* usuarioAEliminar){
+
+	/*
+	 * Este método se llamará cada vez que sea necesario eliminar a un usuario.
+	 * La eliminación de un usuario viene dada bien porque este se vaya al baño, bien porque se cansa...
+	 */
+
+	//=======================================================
+	/*
+	 * Aquí tal vez sea mejor usar un mutexListaUsuarios
+	 */
+	//=======================================================
+
+	//printf("%s: pues me elimino, me he enfadado.\n", us->id);
+
+	pthread_mutex_lock(&mutexListaUsuarios);
+
+		struct usuario* auxiliar;
+
+		if(listaUsuarios.primero == usuarioAEliminar){
+
+			listaUsuarios.primero = listaUsuarios.primero->siguiente;
+
+
+		}else if(listaUsuarios.ultimo == usuarioAEliminar){
+
+			auxiliar = listaUsuarios.primero;
+
+			while(auxiliar != usuarioAEliminar){
+
+				auxiliar = auxiliar->siguiente;	
+
+			}
+
+			listaUsuarios.ultimo = auxiliar;
+
+			auxiliar->siguiente = NULL;
+
+		}else{
+
+			auxiliar = listaUsuarios.primero;
+
+			while((auxiliar->siguiente != usuarioAEliminar) && (auxiliar->siguiente != NULL)){
+
+				auxiliar = auxiliar->siguiente;
+
+			}
+
+			auxiliar->siguiente = usuarioAEliminar->siguiente;
+
+		}
+
+	free(usuarioAEliminar);	
+
+	pthread_mutex_unlock(&mutexListaUsuarios);
 }
 
 void salir() {
