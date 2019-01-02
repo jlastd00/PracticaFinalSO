@@ -44,6 +44,20 @@ struct listaUsuarios {
 
 }listaUsuarios;
 
+struct esperaUsuarios {
+
+  struct usuario* usuarioEsperando;
+  struct esperaUsuarios* siguiente;
+
+} esperaUsuarios;
+
+struct listaEsperaUsuarios {
+
+  struct esperaUsuarios* cabeza;
+  struct esperaUsuarios* cola;
+
+} listaEsperaUsuarios;
+
 
 // Semáforos y variables condicion
 pthread_mutex_t mutexLog;
@@ -51,6 +65,7 @@ pthread_mutex_t mutexFacturador;
 pthread_mutex_t mutexUsuario;
 pthread_mutex_t mutexListaUsuarios;
 pthread_mutex_t mutexSeguridad;
+pthread_mutex_t mutexListaEsperaUsuarios;
 
 // Contador de usuarios
 int numeroUsuarios;
@@ -65,7 +80,7 @@ int usuarioEnControl;
 FILE *logFile;
 char *logFileName = "registroAeropuerto.log";
 
-// Otras vaiables
+// Otras variables
 int maxUsuarios = 10;
 
 // Declaracion de funciones
@@ -76,6 +91,7 @@ void accionesUsuario();
 void accionesFacturador();
 void accionesSegurata();
 void salir();
+struct usuario* atenderUsuario();
 /******************************/
 
 int main(char argc, char *argv[]) {
@@ -311,13 +327,18 @@ void accionesUsuario(struct usuario* us) {
 	//pthread_mutex_unlock(&mutexLog);
 }
 
-void accionesFacturador() {
+void accionesFacturador(struct listaUsuarios* usuario) {
 
-	// 1. Buscar el primer usuario para atender (el que mas lleve esoerando)
+	int contador = 0;
+	int i;
+	struct usuario* nUsuario;
+	// 1. Buscar el primer usuario para atender (el que mas lleve esperando)
 		/* a) Si no hay de mi tipo busco uno de la otra (si el usuario es normal y
 			  facturador es de tipo vip y la cola del otro tiene más de un usuario, lo
 			  atiende) */
+		
 		// b) Si no hay usuarios para atender espero un segundo y vuelvo a 1.
+	
 	// 2. Calculamos el tipo de facturación y en función de esto el tiempo de atención.
 	// 3. Cambiamos el flag de atendido.
 	// 4. Guardamos en el log la hora de atención.
@@ -329,7 +350,35 @@ void accionesFacturador() {
 	// 10. Mira si le toca tomar café.
 	// 11. Volvemos al paso 1 y buscamos el siguiente (siempre con prioridad a su tipo). 
 
+	pthread_mutex_lock(&mutexFacturador);
+
+	while(1) {
+    		if (listaEsperaUsuarios.cabeza == NULL) {
+      		sleep(1);
+    	}else{
+        	nUsuario = atenderUsuario();
+	}
+
+	pthread_mutex_unlock(&mutexFacturador);
+
 }
+
+struct usuario* atenderUsuario() {
+
+  pthread_mutex_lock(&mutexListaEsperaUsuarios);
+
+  struct usuario* usuarioAtendido = listaEsperaUsuarios.cabeza->usuarioEsperando;
+
+  listaEsperaUsuarios.cabeza = listaEsperaUsuarios.cabeza->siguiente;
+
+  pthread_mutex_unlock(&mutexListaEsperaUsuarios);
+
+  return usuarioAtendido;
+
+}
+
+
+
 
 void accionesSegurata() {
 
@@ -385,4 +434,5 @@ void escribirEnLog(char *id, char *msg) {
 
 	pthread_mutex_unlock(&mutexLog);
 
+}
 }
