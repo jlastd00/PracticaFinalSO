@@ -57,10 +57,6 @@ struct listaEsperaUsuarios {
   struct esperaUsuarios* cola;
 
 } listaEsperaUsuarios;
-<<<<<<< HEAD
-=======
-
->>>>>>> 8cd454145fcf923f49afc7f1afa3a5cad779d694
 
 // Semáforos y variables condicion
 pthread_mutex_t mutexLog;
@@ -95,11 +91,9 @@ void accionesFacturador();
 void accionesSegurata();
 void salir();
 struct usuario* atenderUsuario();
-<<<<<<< HEAD
+
 void eliminarUsuario(struct usuario* usuarioAEliminar);
 
-=======
->>>>>>> 8cd454145fcf923f49afc7f1afa3a5cad779d694
 /******************************/
 
 int main(char argc, char *argv[]) {
@@ -140,10 +134,12 @@ int main(char argc, char *argv[]) {
 
 	logFile = fopen(logFileName, "w");
 
-	/*
+	/////////////////////////////////////////////
+	//ESTOS DOS HILOS CREAN UN WARNING CADA UNO//
+	/////////////////////////////////////////////
 	pthread_create(&facturador1, NULL, accionesFacturador, NULL);
 	pthread_create(&facturador2, NULL, accionesFacturador, NULL);
-
+	/*
 	pthread_create(&segurata, NULL, accionesSegurata, NULL);
 	*/
 
@@ -286,6 +282,8 @@ struct usuario* nUsuario = (struct usuario*)us;
 	
 	int usuarioAlBano = 0; //El usuario comprueba si tiene que ir al baño.
 
+	printf("EL NUMERO DE USUARIOS ES... %d\n", numeroUsuarios);
+
 	if(us->atendido != 1){
 
 		printf("No he sido atendido aún...\n");
@@ -352,9 +350,9 @@ struct usuario* nUsuario = (struct usuario*)us;
 
 void accionesFacturador(struct listaUsuarios* usuario) {
 
-	int contador = 0;
-	int i;
 	struct usuario* nUsuario;
+	struct facturador* facturador_1;
+	struct facturador* facturador_2;
 	// 1. Buscar el primer usuario para atender (el que mas lleve esperando)
 		/* a) Si no hay de mi tipo busco uno de la otra (si el usuario es normal y
 			  facturador es de tipo vip y la cola del otro tiene más de un usuario, lo
@@ -373,11 +371,9 @@ void accionesFacturador(struct listaUsuarios* usuario) {
 	// 10. Mira si le toca tomar café.
 	// 11. Volvemos al paso 1 y buscamos el siguiente (siempre con prioridad a su tipo). 
 
-<<<<<<< HEAD
-
 	pthread_mutex_lock(&mutexFacturador);
 
-		while(1) {
+	while(1) {
 
     		if (listaEsperaUsuarios.cabeza == NULL) {
 
@@ -385,56 +381,56 @@ void accionesFacturador(struct listaUsuarios* usuario) {
 
     		}else{
 
-        	nUsuario = atenderUsuario();
+        		nUsuario = atenderUsuario();
 
+			if(nUsuario->tipo==0){
+
+				printf("Atendiendo a un usuario normal.\n");
+				facturador_1->usuariosAtendidos++;
+				
+				//Cambio el flag de atendido
+				nUsuario->atendido = 1;
+
+				//Cada 5 usuarios atendidos el facturador descansa 10 segundos
+				if(facturador_1->usuariosAtendidos%5 == 0){
+					sleep(10);
+				}
+			}				
+			if(nUsuario->tipo==1){
+
+				printf("Atendiendo a un usuario VIP.\n");
+				facturador_2->usuariosAtendidos++;
+
+				//Cambio el flag de atendido
+				nUsuario->atendido = 1;
+				
+				//Cada 5 usuarios atendidos el facturador descansa 10 segundos
+				if(facturador_2->usuariosAtendidos%5 == 0){
+					sleep(10);
+				}
 			}
-
 		}
-=======
-	pthread_mutex_lock(&mutexFacturador);
 
-	while(1) {
-    		if (listaEsperaUsuarios.cabeza == NULL) {
-      		sleep(1);
-    	}else{
-        	nUsuario = atenderUsuario();
 	}
->>>>>>> 8cd454145fcf923f49afc7f1afa3a5cad779d694
 
 	pthread_mutex_unlock(&mutexFacturador);
 
 }
+
 struct usuario* atenderUsuario() {
 
   pthread_mutex_lock(&mutexListaEsperaUsuarios);
 
-  struct usuario* usuarioAtendido = listaEsperaUsuarios.cabeza->usuarioEsperando;
+  	struct usuario* usuarioAtendido = listaEsperaUsuarios.cabeza->usuarioEsperando;
 
-  listaEsperaUsuarios.cabeza = listaEsperaUsuarios.cabeza->siguiente;
+  	listaEsperaUsuarios.cabeza = listaEsperaUsuarios.cabeza->siguiente;
 
-<<<<<<< HEAD
-=======
-struct usuario* atenderUsuario() {
-
-  pthread_mutex_lock(&mutexListaEsperaUsuarios);
-
-  struct usuario* usuarioAtendido = listaEsperaUsuarios.cabeza->usuarioEsperando;
-
-  listaEsperaUsuarios.cabeza = listaEsperaUsuarios.cabeza->siguiente;
-
->>>>>>> 8cd454145fcf923f49afc7f1afa3a5cad779d694
   pthread_mutex_unlock(&mutexListaEsperaUsuarios);
 
   return usuarioAtendido;
 
 }
-<<<<<<< HEAD
-=======
 
-
-
-
->>>>>>> 8cd454145fcf923f49afc7f1afa3a5cad779d694
 void accionesSegurata() {
 
 	// 1. Toma el mutex
@@ -546,5 +542,4 @@ void escribirEnLog(char *id, char *msg) {
 
 	pthread_mutex_unlock(&mutexLog);
 
-}
 }
