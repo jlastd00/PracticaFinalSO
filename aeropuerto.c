@@ -128,7 +128,7 @@ int main(char argc, char *argv[]) {
 	numeroUsuarios = 1;
 
 	listaUsuarios.primero = NULL;
-	listaUsuarios.primero = NULL;
+	listaUsuarios.ultimo = NULL;
 	
 	usuarioEnControl = 0;
 
@@ -198,7 +198,7 @@ void nuevoUsuario(int senal) {
 		}
 
 		printf("Se ha creado un usuario %d\n", us->tipo);
-		//escribirEnLog(us->id, "Esta en cola de facturacion");
+		escribirEnLog(us->id, "Esta en cola de facturacion");
 
 	}
 
@@ -303,11 +303,11 @@ struct usuario* nUsuario = (struct usuario*)us;
 			 * Llegado este punto el usuario se debe eliminar.
 			 */
 
-			eliminarUsuario(nUsuario);
+			/*eliminarUsuario(nUsuario);
 			
 			numeroUsuarios--;
 			
-			pthread_exit(NULL);
+			pthread_exit(NULL);*/
 		}
 
 		/*Cada 3 segundos se comprueba si va al baño pero no se si está así bien.*/
@@ -321,11 +321,11 @@ struct usuario* nUsuario = (struct usuario*)us;
 			 * Aquí se pasaría a la función para eliminar a este usuario y que su lugar se quede libre.
 			 */
 
-			eliminarUsuario(nUsuario);
+			/*eliminarUsuario(nUsuario);
 
 			numeroUsuarios;
 
-			pthread_exit(NULL);
+			pthread_exit(NULL);*/
 		}else{
 
 			printf("%s: voy a seguir esperando...\n",us->id);
@@ -353,6 +353,11 @@ void accionesFacturador(struct listaUsuarios* usuario) {
 	struct usuario* nUsuario;
 	struct facturador* facturador_1;
 	struct facturador* facturador_2;
+
+	int facturacionCorrecta = 0;
+	int demasiadoPeso = 0;
+	int visadoIncorrecto = 0;
+
 	// 1. Buscar el primer usuario para atender (el que mas lleve esperando)
 		/* a) Si no hay de mi tipo busco uno de la otra (si el usuario es normal y
 			  facturador es de tipo vip y la cola del otro tiene más de un usuario, lo
@@ -386,26 +391,45 @@ void accionesFacturador(struct listaUsuarios* usuario) {
 			if(nUsuario->tipo==0){
 
 				printf("Atendiendo a un usuario normal.\n");
-				facturador_1->usuariosAtendidos++;
+
+				char mensajeFacturador[50];
+				strcpy(mensajeFacturador, "Entra ");
+        			strcat(mensajeFacturador, nUsuario->id);
+        			escribirEnLog(facturador_1->id, mensajeFacturador);
 				
 				//Cambio el flag de atendido
 				nUsuario->atendido = 1;
 
+				facturador_1->usuariosAtendidos++;
+
+				//Compruebo si la facturación es correcta para poder pasar al control de seguridad
+				//ESTÁ INCOMPLETO
+				srand(time(NULL));
+
+				//facturacionCorrecta = rand()%
+
 				//Cada 5 usuarios atendidos el facturador descansa 10 segundos
 				if(facturador_1->usuariosAtendidos%5 == 0){
+
+					printf("Soy el facturador_1 y necesito descansar 10 segundos. Ahora vuelvo.\n");
+
 					sleep(10);
 				}
 			}				
 			if(nUsuario->tipo==1){
 
 				printf("Atendiendo a un usuario VIP.\n");
-				facturador_2->usuariosAtendidos++;
 
 				//Cambio el flag de atendido
 				nUsuario->atendido = 1;
-				
+
+				facturador_2->usuariosAtendidos++;
+
 				//Cada 5 usuarios atendidos el facturador descansa 10 segundos
 				if(facturador_2->usuariosAtendidos%5 == 0){
+
+					printf("Soy el facturador_2 y necesito descansar 10 segundos. Ahora vuelvo.\n");
+
 					sleep(10);
 				}
 			}
@@ -536,7 +560,7 @@ void escribirEnLog(char *id, char *msg) {
 	strftime(stnow, 19, "%d/%m/%y  %H:%M:%S", tlocal);
 
 	// Escribimos en el log
-	logFile = fopen("registroTiempos.log", "a");
+	logFile = fopen("registroAeropuerto.log", "a");
 	fprintf(logFile, "[%s] %s: %s\n", stnow, id, msg);
 	fclose(logFile);
 
