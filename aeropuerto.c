@@ -100,7 +100,11 @@ void accionesFacturador();
 void accionesSegurata();
 void salir();
 struct usuario* atenderUsuario();
+<<<<<<< HEAD
 int comprobarUsuarioControlSeguridad();
+=======
+
+>>>>>>> ff346b8797bf4100961aed47f700193fde6e237d
 void eliminarUsuario(struct usuario* usuarioAEliminar);
 
 /******************************/
@@ -137,7 +141,7 @@ int main(char argc, char *argv[]) {
 	numeroUsuarios = 1;
 
 	listaUsuarios.primero = NULL;
-	listaUsuarios.primero = NULL;
+	listaUsuarios.ultimo = NULL;
 	
 	usuarioEnControl = 0;
 
@@ -148,6 +152,10 @@ int main(char argc, char *argv[]) {
 	/////////////////////////////////////////////
 	pthread_create(&facturador1, NULL, accionesFacturador, NULL);
 	pthread_create(&facturador2, NULL, accionesFacturador, NULL);
+<<<<<<< HEAD
+=======
+	/*
+>>>>>>> ff346b8797bf4100961aed47f700193fde6e237d
 	pthread_create(&segurata, NULL, accionesSegurata, NULL);
 	
 	while (1) 
@@ -204,7 +212,7 @@ void nuevoUsuario(int senal) {
 		}
 
 		printf("Se ha creado un usuario %d\n", us->tipo);
-		//escribirEnLog(us->id, "Esta en cola de facturacion");
+		escribirEnLog(us->id, "Esta en cola de facturacion");
 
 	}
 
@@ -309,11 +317,11 @@ struct usuario* nUsuario = (struct usuario*)us;
 			 * Llegado este punto el usuario se debe eliminar.
 			 */
 
-			eliminarUsuario(nUsuario);
+			/*eliminarUsuario(nUsuario);
 			
 			numeroUsuarios--;
 			
-			pthread_exit(NULL);
+			pthread_exit(NULL);*/
 		}
 
 		/*Cada 3 segundos se comprueba si va al baño pero no se si está así bien.*/
@@ -327,11 +335,11 @@ struct usuario* nUsuario = (struct usuario*)us;
 			 * Aquí se pasaría a la función para eliminar a este usuario y que su lugar se quede libre.
 			 */
 
-			eliminarUsuario(nUsuario);
+			/*eliminarUsuario(nUsuario);
 
 			numeroUsuarios;
 
-			pthread_exit(NULL);
+			pthread_exit(NULL);*/
 		}else{
 
 			printf("%s: voy a seguir esperando...\n",us->id);
@@ -359,6 +367,14 @@ void accionesFacturador(struct listaUsuarios* usuario) {
 	struct usuario* nUsuario;
 	struct facturador* facturador_1;
 	struct facturador* facturador_2;
+<<<<<<< HEAD
+=======
+
+	int facturacionCorrecta = 0;
+	int demasiadoPeso = 0;
+	int visadoIncorrecto = 0;
+
+>>>>>>> ff346b8797bf4100961aed47f700193fde6e237d
 	// 1. Buscar el primer usuario para atender (el que mas lleve esperando)
 		/* a) Si no hay de mi tipo busco uno de la otra (si el usuario es normal y
 			  facturador es de tipo vip y la cola del otro tiene más de un usuario, lo
@@ -392,19 +408,44 @@ void accionesFacturador(struct listaUsuarios* usuario) {
 			if(nUsuario->tipo==0){
 
 				printf("Atendiendo a un usuario normal.\n");
+<<<<<<< HEAD
 				facturador_1->usuariosAtendidos++;
+=======
+
+				char mensajeFacturador[50];
+				strcpy(mensajeFacturador, "Entra ");
+        			strcat(mensajeFacturador, nUsuario->id);
+        			escribirEnLog(facturador_1->id, mensajeFacturador);
+>>>>>>> ff346b8797bf4100961aed47f700193fde6e237d
 				
 				//Cambio el flag de atendido
 				nUsuario->atendido = 1;
 
+<<<<<<< HEAD
 				//Cada 5 usuarios atendidos el facturador descansa 10 segundos
 				if(facturador_1->usuariosAtendidos%5 == 0){
+=======
+				facturador_1->usuariosAtendidos++;
+
+				//Compruebo si la facturación es correcta para poder pasar al control de seguridad
+				//ESTÁ INCOMPLETO
+				srand(time(NULL));
+
+				//facturacionCorrecta = rand()%
+
+				//Cada 5 usuarios atendidos el facturador descansa 10 segundos
+				if(facturador_1->usuariosAtendidos%5 == 0){
+
+					printf("Soy el facturador_1 y necesito descansar 10 segundos. Ahora vuelvo.\n");
+
+>>>>>>> ff346b8797bf4100961aed47f700193fde6e237d
 					sleep(10);
 				}
 			}				
 			if(nUsuario->tipo==1){
 
 				printf("Atendiendo a un usuario VIP.\n");
+<<<<<<< HEAD
 				facturador_2->usuariosAtendidos++;
 
 				//Cambio el flag de atendido
@@ -412,6 +453,19 @@ void accionesFacturador(struct listaUsuarios* usuario) {
 				
 				//Cada 5 usuarios atendidos el facturador descansa 10 segundos
 				if(facturador_2->usuariosAtendidos%5 == 0){
+=======
+
+				//Cambio el flag de atendido
+				nUsuario->atendido = 1;
+
+				facturador_2->usuariosAtendidos++;
+
+				//Cada 5 usuarios atendidos el facturador descansa 10 segundos
+				if(facturador_2->usuariosAtendidos%5 == 0){
+
+					printf("Soy el facturador_2 y necesito descansar 10 segundos. Ahora vuelvo.\n");
+
+>>>>>>> ff346b8797bf4100961aed47f700193fde6e237d
 					sleep(10);
 				}
 			}
@@ -437,12 +491,16 @@ struct usuario* atenderUsuario() {
 
 }
 
+<<<<<<< HEAD
 /*
  * En la función accionesSegurata, se toman los usuarios que pasan al control de seguridad.
  * El segurata hace el control a un usuario
  */
 
 void *accionesSegurata(struct listaUsuarios* usuarioAPasarPorSeguridad) {
+=======
+void accionesSegurata() {
+>>>>>>> ff346b8797bf4100961aed47f700193fde6e237d
 
 	// 1. Toma el mutex
 	// 2. Comprueba que haya algún usuario esperando por seguridad
@@ -592,4 +650,8 @@ void escribirEnLog(char *id, char *msg) {
 
 	pthread_mutex_unlock(&mutexLog);
 
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> ff346b8797bf4100961aed47f700193fde6e237d
