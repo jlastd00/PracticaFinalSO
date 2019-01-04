@@ -57,10 +57,6 @@ struct listaEsperaUsuarios {
   struct esperaUsuarios* cola;
 
 } listaEsperaUsuarios;
-<<<<<<< HEAD
-=======
-
->>>>>>> 8cd454145fcf923f49afc7f1afa3a5cad779d694
 
 // Semáforos y variables condicion
 pthread_mutex_t mutexLog;
@@ -69,6 +65,9 @@ pthread_mutex_t mutexUsuario;
 pthread_mutex_t mutexListaUsuarios;
 pthread_mutex_t mutexSeguridad;
 pthread_mutex_t mutexListaEsperaUsuarios;
+// Se declara la condición para el control de seguridad.
+pthread_cond_t condicionControl;
+
 
 // Contador de usuarios
 int numeroUsuarios;
@@ -76,9 +75,15 @@ int numeroUsuarios;
 // Lista de usuarios (10) [id,facturado,atendido,tipo]
 
 
-// Usuario en el control
+// Usuario en el control de Seguridad.
 int usuarioEnControl;
 
+// El segurata está listo para llevar a cabo el control.
+int controlSegurata;
+
+// Variable para que el usuario compruebe si ha pasado el control.
+int usuarioCompruebaControl;
+// int usuario
 // Fichero de log
 FILE *logFile;
 char *logFileName = "registroAeropuerto.log";
@@ -95,11 +100,9 @@ void accionesFacturador();
 void accionesSegurata();
 void salir();
 struct usuario* atenderUsuario();
-<<<<<<< HEAD
+int comprobarUsuarioControlSeguridad();
 void eliminarUsuario(struct usuario* usuarioAEliminar);
 
-=======
->>>>>>> 8cd454145fcf923f49afc7f1afa3a5cad779d694
 /******************************/
 
 int main(char argc, char *argv[]) {
@@ -140,17 +143,16 @@ int main(char argc, char *argv[]) {
 
 	logFile = fopen(logFileName, "w");
 
-	/*
+	/////////////////////////////////////////////
+	//ESTOS DOS HILOS CREAN UN WARNING CADA UNO//
+	/////////////////////////////////////////////
 	pthread_create(&facturador1, NULL, accionesFacturador, NULL);
 	pthread_create(&facturador2, NULL, accionesFacturador, NULL);
-
 	pthread_create(&segurata, NULL, accionesSegurata, NULL);
-	*/
-
+	
 	while (1) 
+
 		pause();
-
-
 
 }
 
@@ -286,6 +288,8 @@ struct usuario* nUsuario = (struct usuario*)us;
 	
 	int usuarioAlBano = 0; //El usuario comprueba si tiene que ir al baño.
 
+	printf("EL NUMERO DE USUARIOS ES... %d\n", numeroUsuarios);
+
 	if(us->atendido != 1){
 
 		printf("No he sido atendido aún...\n");
@@ -352,9 +356,9 @@ struct usuario* nUsuario = (struct usuario*)us;
 
 void accionesFacturador(struct listaUsuarios* usuario) {
 
-	int contador = 0;
-	int i;
 	struct usuario* nUsuario;
+	struct facturador* facturador_1;
+	struct facturador* facturador_2;
 	// 1. Buscar el primer usuario para atender (el que mas lleve esperando)
 		/* a) Si no hay de mi tipo busco uno de la otra (si el usuario es normal y
 			  facturador es de tipo vip y la cola del otro tiene más de un usuario, lo
@@ -373,11 +377,9 @@ void accionesFacturador(struct listaUsuarios* usuario) {
 	// 10. Mira si le toca tomar café.
 	// 11. Volvemos al paso 1 y buscamos el siguiente (siempre con prioridad a su tipo). 
 
-<<<<<<< HEAD
-
 	pthread_mutex_lock(&mutexFacturador);
 
-		while(1) {
+	while(1) {
 
     		if (listaEsperaUsuarios.cabeza == NULL) {
 
@@ -385,57 +387,62 @@ void accionesFacturador(struct listaUsuarios* usuario) {
 
     		}else{
 
-        	nUsuario = atenderUsuario();
+        		nUsuario = atenderUsuario();
 
+			if(nUsuario->tipo==0){
+
+				printf("Atendiendo a un usuario normal.\n");
+				facturador_1->usuariosAtendidos++;
+				
+				//Cambio el flag de atendido
+				nUsuario->atendido = 1;
+
+				//Cada 5 usuarios atendidos el facturador descansa 10 segundos
+				if(facturador_1->usuariosAtendidos%5 == 0){
+					sleep(10);
+				}
+			}				
+			if(nUsuario->tipo==1){
+
+				printf("Atendiendo a un usuario VIP.\n");
+				facturador_2->usuariosAtendidos++;
+
+				//Cambio el flag de atendido
+				nUsuario->atendido = 1;
+				
+				//Cada 5 usuarios atendidos el facturador descansa 10 segundos
+				if(facturador_2->usuariosAtendidos%5 == 0){
+					sleep(10);
+				}
 			}
-
 		}
-=======
-	pthread_mutex_lock(&mutexFacturador);
 
-	while(1) {
-    		if (listaEsperaUsuarios.cabeza == NULL) {
-      		sleep(1);
-    	}else{
-        	nUsuario = atenderUsuario();
 	}
->>>>>>> 8cd454145fcf923f49afc7f1afa3a5cad779d694
 
 	pthread_mutex_unlock(&mutexFacturador);
 
 }
+
 struct usuario* atenderUsuario() {
 
   pthread_mutex_lock(&mutexListaEsperaUsuarios);
 
-  struct usuario* usuarioAtendido = listaEsperaUsuarios.cabeza->usuarioEsperando;
+  	struct usuario* usuarioAtendido = listaEsperaUsuarios.cabeza->usuarioEsperando;
 
-  listaEsperaUsuarios.cabeza = listaEsperaUsuarios.cabeza->siguiente;
+  	listaEsperaUsuarios.cabeza = listaEsperaUsuarios.cabeza->siguiente;
 
-<<<<<<< HEAD
-=======
-struct usuario* atenderUsuario() {
-
-  pthread_mutex_lock(&mutexListaEsperaUsuarios);
-
-  struct usuario* usuarioAtendido = listaEsperaUsuarios.cabeza->usuarioEsperando;
-
-  listaEsperaUsuarios.cabeza = listaEsperaUsuarios.cabeza->siguiente;
-
->>>>>>> 8cd454145fcf923f49afc7f1afa3a5cad779d694
   pthread_mutex_unlock(&mutexListaEsperaUsuarios);
 
   return usuarioAtendido;
 
 }
-<<<<<<< HEAD
-=======
 
+/*
+ * En la función accionesSegurata, se toman los usuarios que pasan al control de seguridad.
+ * El segurata hace el control a un usuario
+ */
 
-
-
->>>>>>> 8cd454145fcf923f49afc7f1afa3a5cad779d694
-void accionesSegurata() {
+void *accionesSegurata(struct listaUsuarios* usuarioAPasarPorSeguridad) {
 
 	// 1. Toma el mutex
 	// 2. Comprueba que haya algún usuario esperando por seguridad
@@ -446,13 +453,52 @@ void accionesSegurata() {
 	// 7. Avisa al usuario de que ha terminado la atención
 	// 8. Libera el mutex
 
-	//pthread_mutex_lock(&mutexSeguridad);
+	// pthread_mutex_lock(&mutexSeguridad);
+
+	while(1){
+
+		struct usuario *aux;
+
+		controlSegurata = 0;
+	
+	}
 
 
 
-	//pthread_mutex_unlock(&mutexSeguridad);
+	// pthread_mutex_unlock(&mutexSeguridad);
 
 }
+
+int comprobarUsuarioControlSeguridad(){
+
+	/*
+	 * En esta función, se declara una variable que será la que indica si el usuario pasa el control de seguridad.
+	 * Se lleva a cabo el mutexlock sobre el mutexSeguridad. Dentro se comprueba si se pasa el control.
+	 * Si se pasa el control la variable cambia de valor. Se desbloquea el mutex.
+	 * Se retorna el valor de la variable que indica si ha pasado el control de seguridad o no.
+	 */
+
+	int pasoControl = 0;
+
+	if(controlSegurata == 1){
+
+		pthread_mutex_lock(&mutexSeguridad);
+
+			if(++usuarioCompruebaControl >= numeroUsuarios){
+
+				pthread_condition_signal(&condicionControl);
+
+				pasoControl = 1;
+
+			}
+
+		pthread_mutex_unlock(&mutexSeguridad);
+
+	}
+
+	return pasoControl;
+}
+
 
 void eliminarUsuario(struct usuario* usuarioAEliminar){
 
@@ -540,11 +586,10 @@ void escribirEnLog(char *id, char *msg) {
 	strftime(stnow, 19, "%d/%m/%y  %H:%M:%S", tlocal);
 
 	// Escribimos en el log
-	logFile = fopen("registroTiempos.log", "a");
+	logFile = fopen("registroAeropuerto.log", "a");
 	fprintf(logFile, "[%s] %s: %s\n", stnow, id, msg);
 	fclose(logFile);
 
 	pthread_mutex_unlock(&mutexLog);
 
-}
 }
